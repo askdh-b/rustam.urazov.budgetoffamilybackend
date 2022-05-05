@@ -3,4 +3,4 @@ package rustam.urazov.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AuthResponse(val token: String)
+data class Token(val token: String)

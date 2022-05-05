@@ -14,14 +14,18 @@ fun Route.userRouting() {
     route("/register") {
         post {
             val user = call.receive<User>()
-            userStorage.add(User(
-                id = user.id,
-                firstName = user.firstName,
-                lastName = user.lastName,
-                userName = user.userName,
-                password = md5(user.password).toHex()
-            ))
+            userStorage.add(
+                User(
+                    id = generateUserId().toString(),
+                    firstName = user.firstName,
+                    lastName = user.lastName,
+                    userName = user.userName,
+                    password = md5(user.password).toHex()
+                )
+            )
             call.respondText("Registration is successfully", status = HttpStatusCode.Created)
         }
     }
 }
+
+fun generateUserId(): Int = if (userStorage.size > 0) userStorage[userStorage.lastIndex].id.toInt() + 1 else 1

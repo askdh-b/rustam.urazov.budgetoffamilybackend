@@ -9,7 +9,7 @@ import rustam.urazov.plugins.*
 
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
-        log =LoggerFactory.getLogger("ktor.application")
+        log = LoggerFactory.getLogger("ktor.application")
         config = HoconApplicationConfig(ConfigFactory.load())
 
         module {

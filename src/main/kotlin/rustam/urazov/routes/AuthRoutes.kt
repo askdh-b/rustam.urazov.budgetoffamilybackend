@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 import rustam.urazov.generateToken
 import rustam.urazov.md5
 import rustam.urazov.models.AuthBody
-import rustam.urazov.models.AuthResponse
+import rustam.urazov.models.Token
 import rustam.urazov.models.userStorage
 import rustam.urazov.toHex
 
@@ -18,8 +18,8 @@ fun Route.authRouting() {
             val authBody = call.receive<AuthBody>()
             for (user in userStorage) {
                 if (user.userName == authBody.userName && user.password == md5(authBody.password).toHex()) {
-                    val authResponse = AuthResponse(generateToken())
-                    call.respond(authResponse)
+                    val token = Token(generateToken())
+                    call.respond(token)
                 } else {
                     call.respondText("Invalid username or password", status = HttpStatusCode.NotAcceptable)
                 }
