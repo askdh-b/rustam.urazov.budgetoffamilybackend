@@ -19,6 +19,7 @@ fun Route.userRouting() {
                 userStorage.add(
                     user.apply {
                         id = generateUserId()
+                        familyId = 0
                         password = md5(user.password).toHex()
                     }
                 )
