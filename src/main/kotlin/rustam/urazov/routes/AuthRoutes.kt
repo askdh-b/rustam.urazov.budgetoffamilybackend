@@ -16,14 +16,9 @@ fun Route.authRouting() {
     route("/auth") {
         post {
             val authBody = call.receive<AuthBody>()
-            for (user in userStorage) {
-                if (user.userName == authBody.userName && user.password == md5(authBody.password).toHex()) {
-                    val token = Token(generateToken())
-                    call.respond(token)
-                } else {
-                    call.respondText("Invalid username or password", status = HttpStatusCode.NotAcceptable)
-                }
-            }
+            userStorage.find { it.userName == authBody.userName }?.let {
+                if (it.password == md5(authBody.password).toHex()) call.respond(Token(generateToken()))
+            } ?: call.respondText("Invalid username or password", status = HttpStatusCode.NotAcceptable)
         }
     }
 }

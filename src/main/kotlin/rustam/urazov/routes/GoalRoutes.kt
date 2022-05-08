@@ -17,58 +17,46 @@ fun Route.goalRouting() {
                 "Missing id",
                 status = HttpStatusCode.BadRequest
             )
-            val goal = goalStorage.find { it.userId.toString() == id } ?: return@get call.respondText(
-                "No goals with userId $id",
-                status = HttpStatusCode.NotFound
-            )
+
+            val goal = goalStorage.filter { it.userId.toString() == id }
             call.respond(goal)
         }
+
         post {
             val goal = call.receive<Goal>()
+
             goalStorage.add(
-                Goal(
-                    id = generateGoalId(),
-                    userId = goal.userId,
-                    name = goal.name,
-                    incomePercentile = goal.incomePercentile,
-                    progress = goal.progress,
-                    sum = goal.sum,
+                goal.apply {
+                    id = generateGoalId()
                     creationDate = SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(Date())
-                )
+                }
             )
             call.respondText(
                 "Goal stored correctly",
                 status = HttpStatusCode.Created
             )
         }
+
         put("{id?}") {
             val newGoal = call.receive<Goal>()
             val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
-            val oldGoal =
-                goalStorage.find { it.id.toString() == id } ?: return@put call.respond(HttpStatusCode.NotFound)
-            goalStorage.removeIf { it.id.toString() == id }
-            goalStorage.add(
-                Goal(
-                    id = oldGoal.id,
-                    userId = oldGoal.userId,
-                    name = newGoal.name,
-                    incomePercentile = newGoal.incomePercentile,
-                    progress = newGoal.progress,
-                    sum = newGoal.sum,
-                    creationDate = oldGoal.creationDate
-                )
-            )
-            call.respondText(
-                "Goal edited correctly",
-                status = HttpStatusCode.Created
-            )
+            goalStorage.find { it.id.toString() == id }?.let {
+                it.apply {
+                    name = newGoal.name
+                    incomePercentile = newGoal.incomePercentile
+                    progress = newGoal.progress
+                    sum = newGoal.sum
+                }
+                call.respondText("Goal edited correctly", status = HttpStatusCode.OK)
+            } ?: call.respondText("Goal not found", status = HttpStatusCode.NotFound)
         }
+
         delete("{id?}") {
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
             if (goalStorage.removeIf { it.id.toString() == id }) {
                 call.respondText(
                     "Goal removed correctly",
-                    status = HttpStatusCode.NotFound
+                    status = HttpStatusCode.OK
                 )
             } else {
                 call.respondText(
@@ -80,4 +68,8 @@ fun Route.goalRouting() {
     }
 }
 
-fun generateGoalId(): Int = if (goalStorage.size > 0) goalStorage[goalStorage.lastIndex].id + 1 else 1
+fun generateGoalId(): Int = try {
+    goalStorage.last().id + 1
+} catch (e: Exception) {
+    1
+}

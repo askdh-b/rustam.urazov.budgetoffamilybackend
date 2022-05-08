@@ -14,18 +14,25 @@ fun Route.userRouting() {
     route("/register") {
         post {
             val user = call.receive<User>()
-            userStorage.add(
-                User(
-                    id = generateUserId().toString(),
-                    firstName = user.firstName,
-                    lastName = user.lastName,
-                    userName = user.userName,
-                    password = md5(user.password).toHex()
+
+            if (checkUserNameForUniqueness(user.userName)) {
+                userStorage.add(
+                    user.apply {
+                        id = generateUserId()
+                        password = md5(user.password).toHex()
+                    }
                 )
-            )
-            call.respondText("Registration is successfully", status = HttpStatusCode.Created)
+                call.respondText("Registration is successfully", status = HttpStatusCode.Created)
+            } else call.respondText("This username is taken", status = HttpStatusCode.BadRequest)
         }
     }
 }
 
-fun generateUserId(): Int = if (userStorage.size > 0) userStorage[userStorage.lastIndex].id.toInt() + 1 else 1
+fun generateUserId(): Int = try {
+    userStorage.last().id + 1
+} catch (e: Exception) {
+    1
+}
+
+fun checkUserNameForUniqueness(userName: String): Boolean =
+    userStorage.find { it.userName == userName }?.let { false } ?: true

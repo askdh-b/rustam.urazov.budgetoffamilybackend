@@ -4,13 +4,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Goal(
-    val id: Int,
+    var id: Int,
     val userId: Int,
-    val name: String,
-    val incomePercentile: Double,
-    val progress: Double,
-    val sum: Double,
-    val creationDate: String,
+    var name: String,
+    var incomePercentile: Double,
+    var progress: Double,
+    var sum: Double,
+    var creationDate: String,
 )
 
 val goalStorage = mutableListOf<Goal>()
