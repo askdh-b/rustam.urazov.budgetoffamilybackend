@@ -11,8 +11,6 @@ import rustam.urazov.plugins.configureAuthentication
 import rustam.urazov.plugins.configureRouting
 import rustam.urazov.plugins.configureSerialization
 
-val applicationHttpClient = HttpClient(CIO) {}
-
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
         log = LoggerFactory.getLogger("ktor.application")

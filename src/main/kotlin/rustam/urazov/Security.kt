@@ -14,4 +14,5 @@ fun generateToken(): String {
     return md5(str).toHex()
 }
 
+
 fun isAuthorized(id: Int): Boolean = sessionStorage.find { it.userId == id } != null
