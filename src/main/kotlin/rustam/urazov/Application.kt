@@ -1,11 +1,17 @@
 package rustam.urazov
 
 import com.typesafe.config.ConfigFactory
-import io.ktor.server.netty.*
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
 import io.ktor.server.config.*
 import io.ktor.server.engine.*
+import io.ktor.server.netty.*
 import org.slf4j.LoggerFactory
-import rustam.urazov.plugins.*
+import rustam.urazov.plugins.configureAuthentication
+import rustam.urazov.plugins.configureRouting
+import rustam.urazov.plugins.configureSerialization
+
+val applicationHttpClient = HttpClient(CIO) {}
 
 fun main() {
     embeddedServer(Netty, environment = applicationEngineEnvironment {
@@ -15,7 +21,7 @@ fun main() {
         module {
             configureRouting()
             configureSerialization()
-            configureSession()
+            configureAuthentication()
         }
 
         connector {

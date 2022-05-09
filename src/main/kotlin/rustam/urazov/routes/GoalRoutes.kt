@@ -5,28 +5,19 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import io.ktor.server.sessions.*
-import rustam.urazov.isAuthorized
 import rustam.urazov.models.Goal
 import rustam.urazov.models.goalStorage
-import rustam.urazov.plugins.AuthSession
-import java.text.SimpleDateFormat
 import java.util.*
 
 fun Route.goalRouting() {
     route("/goal") {
         get("{userId?}") {
-            val authSession = call.sessions.get<AuthSession>()
             val id = call.parameters["userId"] ?: return@get call.respondText(
                 "Missing id", status = HttpStatusCode.BadRequest
             )
 
-            if (isAuthorized(authSession)) {
-                val goal = goalStorage.filter { it.userId.toString() == id }
-                call.respond(goal)
-            } else {
-                call.respondText("Authentication error", status = HttpStatusCode.Unauthorized)
-            }
+            val goal = goalStorage.filter { it.userId.toString() == id }
+            call.respond(goal)
         }
 
         post {
@@ -34,7 +25,7 @@ fun Route.goalRouting() {
 
             goalStorage.add(goal.apply {
                 id = generateGoalId()
-                creationDate = SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(Date())
+                creationDate = Date().toString()
             })
             call.respondText(
                 "Goal stored correctly", status = HttpStatusCode.Created
