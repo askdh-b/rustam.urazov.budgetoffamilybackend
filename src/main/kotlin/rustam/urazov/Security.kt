@@ -1,5 +1,7 @@
 package rustam.urazov
 
+import rustam.urazov.plugins.AuthSession
+import rustam.urazov.plugins.sessionStorage
 import java.security.MessageDigest
 import kotlin.random.Random
 
@@ -12,3 +14,8 @@ fun generateToken(): String {
     val str = random.toString()
     return md5(str).toHex()
 }
+
+fun isAuthorized(authSession: AuthSession?): Boolean =
+    if (authSession != null)
+            (authSession.token) == (sessionStorage.find { it.userId == authSession.userId }?.token)
+    else false

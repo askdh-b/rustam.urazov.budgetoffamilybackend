@@ -15,6 +15,7 @@ fun main() {
         module {
             configureRouting()
             configureSerialization()
+            configureSession()
         }
 
         connector {

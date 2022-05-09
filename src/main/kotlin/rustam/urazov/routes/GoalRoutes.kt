@@ -5,35 +5,39 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.server.sessions.*
+import rustam.urazov.isAuthorized
 import rustam.urazov.models.Goal
 import rustam.urazov.models.goalStorage
+import rustam.urazov.plugins.AuthSession
 import java.text.SimpleDateFormat
 import java.util.*
 
 fun Route.goalRouting() {
     route("/goal") {
         get("{userId?}") {
+            val authSession = call.sessions.get<AuthSession>()
             val id = call.parameters["userId"] ?: return@get call.respondText(
-                "Missing id",
-                status = HttpStatusCode.BadRequest
+                "Missing id", status = HttpStatusCode.BadRequest
             )
 
-            val goal = goalStorage.filter { it.userId.toString() == id }
-            call.respond(goal)
+            if (isAuthorized(authSession)) {
+                val goal = goalStorage.filter { it.userId.toString() == id }
+                call.respond(goal)
+            } else {
+                call.respondText("Authentication error", status = HttpStatusCode.Unauthorized)
+            }
         }
 
         post {
             val goal = call.receive<Goal>()
 
-            goalStorage.add(
-                goal.apply {
-                    id = generateGoalId()
-                    creationDate = SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(Date())
-                }
-            )
+            goalStorage.add(goal.apply {
+                id = generateGoalId()
+                creationDate = SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(Date())
+            })
             call.respondText(
-                "Goal stored correctly",
-                status = HttpStatusCode.Created
+                "Goal stored correctly", status = HttpStatusCode.Created
             )
         }
 
@@ -55,13 +59,11 @@ fun Route.goalRouting() {
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
             if (goalStorage.removeIf { it.id.toString() == id }) {
                 call.respondText(
-                    "Goal removed correctly",
-                    status = HttpStatusCode.OK
+                    "Goal removed correctly", status = HttpStatusCode.OK
                 )
             } else {
                 call.respondText(
-                    "Not found",
-                    status = HttpStatusCode.NotFound
+                    "Not found", status = HttpStatusCode.NotFound
                 )
             }
         }
