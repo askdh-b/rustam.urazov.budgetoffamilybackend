@@ -11,27 +11,28 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.md5
 import rustam.urazov.models.AuthBody
-import rustam.urazov.models.User
 import rustam.urazov.models.Username
 import rustam.urazov.models.userStorage
 import rustam.urazov.toHex
 import java.util.*
 
 fun Application.configureAuthentication() {
-    val secret = "secret"
+    val secret = "I hate niggers"
     val issuer = "http://127.0.0.1:8080/"
-    val audience = "http://127.0.0.1:8080/user"
-    val myRealm = "Access to 'user'"
+    val audience = "http://127.0.0.1:8080/"
+    val myRealm = ""
 
     install(Authentication) {
         jwt("auth-jwt") {
             realm = myRealm
+
             verifier(
                 JWT.require(Algorithm.HMAC256(secret))
                     .withAudience(audience)
                     .withIssuer(issuer)
                     .build()
             )
+
             validate { credential ->
                 if (credential.payload.getClaim("username").asString() != "") {
                     JWTPrincipal(credential.payload)
@@ -39,6 +40,7 @@ fun Application.configureAuthentication() {
                     null
                 }
             }
+
             challenge { defaultScheme, realm ->
                 call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
             }
@@ -46,12 +48,14 @@ fun Application.configureAuthentication() {
 
         jwt("refresh-auth-jwt") {
             realm = myRealm
+
             verifier(
                 JWT.require(Algorithm.HMAC256(secret))
                     .withAudience(audience)
                     .withIssuer(issuer)
                     .build()
             )
+
             validate { credential ->
                 if (credential.payload.getClaim("username").asString() != "") {
                     JWTPrincipal(credential.payload)
@@ -61,6 +65,7 @@ fun Application.configureAuthentication() {
             }
         }
     }
+
     routing {
         post("/auth") {
             val user = call.receive<AuthBody>()
@@ -73,6 +78,7 @@ fun Application.configureAuthentication() {
                         .withClaim("username", user.username)
                         .withExpiresAt(Date(System.currentTimeMillis() + 86400000))
                         .sign(Algorithm.HMAC256(secret))
+
                     val refreshToken = JWT.create()
                         .withAudience(audience)
                         .withIssuer(issuer)
@@ -88,15 +94,18 @@ fun Application.configureAuthentication() {
                 }
             } ?: call.respondText("Invalid username or password", status = HttpStatusCode.NotAcceptable)
         }
+
         authenticate("refresh-auth-jwt") {
             post("/refresh") {
                 val user = call.receive<Username>()
+
                 val accessToken = JWT.create()
                     .withAudience(audience)
                     .withIssuer(issuer)
                     .withClaim("username", user.username)
                     .withExpiresAt(Date(System.currentTimeMillis() + 86400000))
                     .sign(Algorithm.HMAC256(secret))
+
                 val refreshToken = JWT.create()
                     .withAudience(audience)
                     .withIssuer(issuer)
@@ -113,4 +122,3 @@ fun Application.configureAuthentication() {
         }
     }
 }
-
