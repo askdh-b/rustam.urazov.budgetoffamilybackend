@@ -19,7 +19,7 @@ fun Route.userRouting() {
             if (checkUserNameForUniqueness(user.username)) {
                 userStorage.add(mapToUser(user))
                 call.respond(status = HttpStatusCode.Created, message = "Registration is successfully")
-            } else call.respond(status = HttpStatusCode.BadRequest, message = "This username is taken")
+            } else call.respond(status = HttpStatusCode.Conflict, message = "This username is taken")
         }
     }
 }

@@ -86,10 +86,10 @@ fun Application.configureAuthentication() {
                         .withClaim("username", user.username)
                         .sign(Algorithm.HMAC256(secret))
 
-                    val token = Token(accessToken, refreshToken)
+                    val token = Token(accessToken = accessToken, refreshToken = refreshToken)
                     call.respond(token)
                 }
-            } ?: call.respond(status = HttpStatusCode.NotAcceptable, message = "Invalid username or password")
+            } ?: call.respond(status = HttpStatusCode.Unauthorized, message = "Invalid username or password")
         }
 
         authenticate("refresh-auth-jwt") {

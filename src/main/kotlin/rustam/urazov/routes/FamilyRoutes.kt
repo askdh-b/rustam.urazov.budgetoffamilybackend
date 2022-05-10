@@ -31,15 +31,24 @@ fun Route.familyRouting() {
 
             userStorage.find { it.username == username }?.let { user ->
                 userStorage.filter { it.familyId == user.familyId }.let { users ->
+                    var usersCount = 0
+
                     for (u in users) {
-                        u.familyId = null
+                        usersCount += 1
                     }
 
-                    familyStorage.remove(familyStorage.find { it.id == user.familyId })
-
-                    call.respond(status = HttpStatusCode.OK, message = "Family deleted correctly")
+                    if (usersCount >= 1) {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "It is impossible to remove to a family while there is more than one person in it"
+                        )
+                    } else {
+                        user.familyId = null
+                        familyStorage.remove(familyStorage.find { it.id == user.familyId })
+                        call.respond(status = HttpStatusCode.OK, message = "Family deleted correctly")
+                    }
                 }
-            }
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
     }
 }

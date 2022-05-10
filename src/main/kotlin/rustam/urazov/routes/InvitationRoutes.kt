@@ -23,7 +23,7 @@ fun Route.invitationRouting() {
                 val invitation = invitationStorage.filter { it.recipientId == user.id }
 
                 call.respond(invitation)
-            }
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
         post("/invitation") {
@@ -37,14 +37,19 @@ fun Route.invitationRouting() {
             val familyId = userStorage.find { it.username == username }?.familyId
 
             if (senderId != null && familyId != null) {
-                invitationStorage.add(
-                    mapToInvitation(
-                        invitation,
-                        senderId,
-                        familyId
+                if (senderId != invitation.recipientId) {
+                    invitationStorage.add(
+                        mapToInvitation(
+                            invitation,
+                            senderId,
+                            familyId
+                        )
                     )
+                    call.respond(status = HttpStatusCode.Created, message = "Invitation sent correctly")
+                } else call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "Нou cannot send an invitation to yourself"
                 )
-                call.respond(status = HttpStatusCode.Created, message = "Invitation sent correctly")
             } else call.respond(status = HttpStatusCode.NotFound, message = "User or family is null")
         }
 
@@ -67,13 +72,13 @@ fun Route.invitationRouting() {
                         } else {
                             call.respond(
                                 status = HttpStatusCode.BadRequest,
-                                message = "This user is already in the family"
+                                message = "You are already in the family"
                             )
                         }
                     } else {
                         call.respond(status = HttpStatusCode.NotFound, message = "Invitation not found")
                     }
-                }
+                } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "Invitation not found")
         }
 
@@ -93,7 +98,10 @@ fun Route.invitationRouting() {
                     invitationStorage.removeIf { it.id.toString() == id }.let {
                         call.respond(status = HttpStatusCode.OK, message = "Invitation removed correctly")
                     }
-                } else call.respond(status = HttpStatusCode.BadRequest, message = "You cannot remove else's invitation")
+                } else call.respond(
+                    status = HttpStatusCode.BadRequest,
+                    message = "You cannot remove someone else's invitation"
+                )
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
     }

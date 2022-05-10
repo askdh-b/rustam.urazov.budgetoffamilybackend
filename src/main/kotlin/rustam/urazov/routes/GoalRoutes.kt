@@ -26,6 +26,7 @@ fun Route.goalRouting() {
                 familyStorage.find { it.id == user.familyId }?.let { family ->
                     userStorage.filter { it.familyId == family.id }.let { users ->
                         val goals = mutableListOf<Goal>()
+
                         for (u in users) {
                             goals.addAll(goalStorage.filter { it.userId == u.id })
                         }
@@ -77,10 +78,10 @@ fun Route.goalRouting() {
                     } else {
                         call.respond(
                             status = HttpStatusCode.BadRequest,
-                            message = "You cannot edit someone else's target"
+                            message = "You cannot edit someone else's goal"
                         )
                     }
-                }
+                } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "Goal not found")
         }
 
@@ -91,15 +92,24 @@ fun Route.goalRouting() {
 
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
 
-            if (goalStorage.removeIf { it.id.toString() == id }) {
-                call.respond(
-                    status = HttpStatusCode.OK, message = "Goal removed correctly"
-                )
-            } else {
-                call.respond(
-                    status = HttpStatusCode.NotFound, message = "Not found"
-                )
-            }
+            userStorage.find { it.username == username }?.let { user ->
+                goalStorage.find { it.id.toString() == id }?.let { goal ->
+                    if (user.id == goal.userId) {
+                        if (goalStorage.removeIf { it.id.toString() == id }) {
+                            call.respond(
+                                status = HttpStatusCode.OK, message = "Goal removed correctly"
+                            )
+                        } else {
+                            call.respond(
+                                status = HttpStatusCode.BadRequest, message = "Goal not removed"
+                            )
+                        }
+                    } else call.respond(
+                        status = HttpStatusCode.BadRequest,
+                        message = "You cannot remove someone else's goal"
+                    )
+                } ?: call.respond(status = HttpStatusCode.NotFound, message = "Goal not found")
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
     }
 }
