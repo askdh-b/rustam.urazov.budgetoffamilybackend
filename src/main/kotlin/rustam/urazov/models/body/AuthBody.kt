@@ -1,4 +1,4 @@
-package rustam.urazov.models
+package rustam.urazov.models.body
 
 import kotlinx.serialization.Serializable
 

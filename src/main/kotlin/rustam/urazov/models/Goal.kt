@@ -10,7 +10,7 @@ data class Goal(
     var incomePercentile: Double,
     var progress: Double,
     var sum: Double,
-    var creationDate: String,
+    var creationDate: String
 )
 
 val goalStorage = mutableListOf<Goal>()

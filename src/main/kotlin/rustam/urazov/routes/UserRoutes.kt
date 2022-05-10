@@ -7,24 +7,19 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.md5
 import rustam.urazov.models.User
+import rustam.urazov.models.body.UserBody
 import rustam.urazov.models.userStorage
 import rustam.urazov.toHex
 
 fun Route.userRouting() {
     route("/register") {
         post {
-            val user = call.receive<User>()
+            val user = call.receive<UserBody>()
 
             if (checkUserNameForUniqueness(user.username)) {
-                userStorage.add(
-                    user.apply {
-                        id = generateUserId()
-                        familyId = null
-                        password = md5(user.password).toHex()
-                    }
-                )
-                call.respondText("Registration is successfully", status = HttpStatusCode.Created)
-            } else call.respondText("This username is taken", status = HttpStatusCode.BadRequest)
+                userStorage.add(mapToUser(user))
+                call.respond(status = HttpStatusCode.Created, message = "Registration is successfully")
+            } else call.respond(status = HttpStatusCode.BadRequest, message = "This username is taken")
         }
     }
 }
@@ -34,6 +29,15 @@ fun generateUserId(): Int = try {
 } catch (e: Exception) {
     1
 }
+
+fun mapToUser(user: UserBody): User = User(
+    id = generateUserId(),
+    familyId = null,
+    firstName = user.firstName,
+    lastName = user.lastName,
+    username = user.username,
+    password = md5(user.password).toHex()
+)
 
 fun checkUserNameForUniqueness(userName: String): Boolean =
     userStorage.find { it.username == userName }?.let { false } ?: true

@@ -10,7 +10,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.md5
-import rustam.urazov.models.AuthBody
+import rustam.urazov.models.Token
+import rustam.urazov.models.body.AuthBody
 import rustam.urazov.models.Username
 import rustam.urazov.models.userStorage
 import rustam.urazov.toHex
@@ -42,7 +43,7 @@ fun Application.configureAuthentication() {
             }
 
             challenge { defaultScheme, realm ->
-                call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
+                call.respond(status = HttpStatusCode.Unauthorized, message = "Token is not valid or has expired")
             }
         }
 
@@ -85,14 +86,10 @@ fun Application.configureAuthentication() {
                         .withClaim("username", user.username)
                         .sign(Algorithm.HMAC256(secret))
 
-                    call.respond(
-                        listOf(
-                            hashMapOf("accessToken" to accessToken),
-                            hashMapOf("refreshToken" to refreshToken)
-                        )
-                    )
+                    val token = Token(accessToken, refreshToken)
+                    call.respond(token)
                 }
-            } ?: call.respondText("Invalid username or password", status = HttpStatusCode.NotAcceptable)
+            } ?: call.respond(status = HttpStatusCode.NotAcceptable, message = "Invalid username or password")
         }
 
         authenticate("refresh-auth-jwt") {
@@ -112,12 +109,8 @@ fun Application.configureAuthentication() {
                     .withClaim("username", user.username)
                     .sign(Algorithm.HMAC256(secret))
 
-                call.respond(
-                    listOf(
-                        hashMapOf("accessToken" to accessToken),
-                        hashMapOf("refreshToken" to refreshToken)
-                    )
-                )
+                val token = Token(accessToken = accessToken, refreshToken = refreshToken)
+                call.respond(token)
             }
         }
     }

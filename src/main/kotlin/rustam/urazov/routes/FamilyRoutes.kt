@@ -2,7 +2,8 @@ package rustam.urazov.routes
 
 import io.ktor.http.*
 import io.ktor.server.application.*
-import io.ktor.server.request.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.models.Family
@@ -10,42 +11,40 @@ import rustam.urazov.models.familyStorage
 import rustam.urazov.models.userStorage
 
 fun Route.familyRouting() {
-    route("/family") {
-        get("{id?}") {
-            val id = call.parameters["id"] ?: return@get call.respondText(
-                "Missing id",
-                status = HttpStatusCode.BadRequest
-            )
+    authenticate("auth-jwt") {
+        post("/family") {
+            val principal = call.principal<JWTPrincipal>()
 
-            val familyMembers = userStorage.filter { it.familyId.toString() == id }
-            call.respond(familyMembers)
+            val username = principal!!.payload.getClaim("username").asString()
+
+            familyStorage.add(mapToFamily())
+
+            userStorage.find { it.username == username }?.familyId = familyStorage.last().id
+
+            call.respond(status = HttpStatusCode.Created, message = "Family created correctly")
         }
 
-        post {
-            val family = call.receive<Family>()
+        delete("/family") {
+            val principal = call.principal<JWTPrincipal>()
 
-            familyStorage.add(family.apply {
-                id = generateFamilyId()
-            })
-            call.respondText("Family created correctly", status = HttpStatusCode.Created)
-        }
+            val username = principal!!.payload.getClaim("username").asString()
 
-        delete("{id?}") {
-            val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
-            if (familyStorage.removeIf { it.id.toString() == id }) {
-                call.respondText(
-                    "Family deleted correctly",
-                    status = HttpStatusCode.OK
-                )
-            } else {
-                call.respondText(
-                    "Not found",
-                    status = HttpStatusCode.NotFound
-                )
+            userStorage.find { it.username == username }?.let { user ->
+                userStorage.filter { it.familyId == user.familyId }.let { users ->
+                    for (u in users) {
+                        u.familyId = null
+                    }
+
+                    familyStorage.remove(familyStorage.find { it.id == user.familyId })
+
+                    call.respond(status = HttpStatusCode.OK, message = "Family deleted correctly")
+                }
             }
         }
     }
 }
+
+fun mapToFamily(): Family = Family(generateFamilyId())
 
 fun generateFamilyId(): Int = try {
     familyStorage.last().id + 1

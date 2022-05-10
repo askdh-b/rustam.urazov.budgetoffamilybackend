@@ -1,15 +1,11 @@
-package rustam.urazov.models
+package rustam.urazov.models.body
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class User(
-    val id: Int,
-    var familyId: Int?,
+data class UserBody(
     val firstName: String,
     val lastName: String,
     val username: String,
     val password: String,
 )
-
-val userStorage = mutableListOf<User>()
