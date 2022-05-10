@@ -3,7 +3,4 @@ package rustam.urazov.models
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class AuthBody(
-    val username: String,
-    val password: String,
-)
+data class Username(val username: String)

@@ -8,7 +8,7 @@ data class User(
     var familyId: Int?,
     val firstName: String,
     val lastName: String,
-    val userName: String,
+    val username: String,
     var password: String
 )
 

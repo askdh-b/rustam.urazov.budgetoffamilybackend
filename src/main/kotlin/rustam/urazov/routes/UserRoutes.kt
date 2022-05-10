@@ -15,7 +15,7 @@ fun Route.userRouting() {
         post {
             val user = call.receive<User>()
 
-            if (checkUserNameForUniqueness(user.userName)) {
+            if (checkUserNameForUniqueness(user.username)) {
                 userStorage.add(
                     user.apply {
                         id = generateUserId()
@@ -36,4 +36,4 @@ fun generateUserId(): Int = try {
 }
 
 fun checkUserNameForUniqueness(userName: String): Boolean =
-    userStorage.find { it.userName == userName }?.let { false } ?: true
+    userStorage.find { it.username == userName }?.let { false } ?: true
