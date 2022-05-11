@@ -17,11 +17,16 @@ fun Route.familyRouting() {
 
             val username = principal!!.payload.getClaim("username").asString()
 
-            familyStorage.add(mapToFamily())
+            val user = userStorage.find { it.username == username }
 
-            userStorage.find { it.username == username }?.familyId = familyStorage.last().id
+            if (user != null) {
+                if (user.familyId == null) {
+                    familyStorage.add(mapToFamily())
 
-            call.respond(status = HttpStatusCode.Created, message = "Family created correctly")
+                    userStorage.find { it == user }?.familyId = familyStorage.last().id
+                    call.respond(status = HttpStatusCode.Created, message = "Family created correctly")
+                } else call.respond(status = HttpStatusCode.BadRequest, message = "You are already in the family")
+            } else call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
         delete("/family") {
