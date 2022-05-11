@@ -12,5 +12,6 @@ fun Application.configureRouting() {
         goalRouting()
         incomeRouting()
         spendingRouting()
+        incomesSourceRouting()
     }
 }
