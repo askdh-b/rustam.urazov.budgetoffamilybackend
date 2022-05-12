@@ -1,0 +1,11 @@
+version: "3.7"
+services:
+  family_budget_db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_DB: "family_budgetdb"
+      POSTGRES_USER: "mejianhojiik"
+      POSTGRES_PASSWORD: "passwordpw"
+      POSTGRES_ROOT_PASSWORD: "superidolG)N#"
+    ports:
+      - "5432:5432"

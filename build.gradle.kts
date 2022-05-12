@@ -27,6 +27,15 @@ dependencies {
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
+    implementation("org.kodein.di:kodein-di-framework-ktor-server-jvm:7.0.0")
+
+    implementation("org.jetbrains.exposed:exposed-core:0.38.2")
+    implementation("org.jetbrains.exposed:exposed-dao:0.38.2")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
+
+    implementation("com.zaxxer:HikariCP:3.4.5")
+    implementation("org.postgresql:postgresql:42.2.1")
+
     implementation("ch.qos.logback:logback-classic:$logback_version")
     testImplementation("io.ktor:ktor-server-test-host:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
