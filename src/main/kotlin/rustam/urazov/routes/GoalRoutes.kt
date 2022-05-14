@@ -38,6 +38,28 @@ fun Route.goalRouting() {
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
+        get("/goal/{id?}") {
+            val principal = call.principal<JWTPrincipal>()
+
+            val username = principal!!.payload.getClaim("username").asString()
+
+            val id = call.parameters["id"] ?: return@get call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Goal not found"
+            )
+
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                goalService.getAllGoals().find { it.id.toString() == id }
+                    ?.let { goal ->
+                        if (user.id == goal.id) call.respond(goal)
+                        else call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "You can't view other people's goals"
+                        )
+                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "Goal not found")
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
+        }
+
         post("/goal") {
             val principal = call.principal<JWTPrincipal>()
 
