@@ -22,7 +22,7 @@ fun Route.incomeRouting() {
             val username = principal!!.payload.getClaim("username").asString()
 
             userService.getAllUser().find { it.username == username }?.let { user ->
-                familyService.getAllFamilies().find { it.id == user.id }?.let { family ->
+                familyService.getAllFamilies().find { it.id == user.familyId }?.let { family ->
                     userService.getAllUser().filter { it.familyId == family.id }.let { users ->
                         val incomes = mutableListOf<Income>()
 

@@ -26,8 +26,8 @@ dependencies {
     implementation("io.ktor:ktor-server-auth:$ktor_version")
     implementation("io.ktor:ktor-client-core:$ktor_version")
     implementation("io.ktor:ktor-client-cio:$ktor_version")
+    implementation("io.ktor:ktor-serialization-gson:$ktor_version")
     implementation("io.ktor:ktor-server-auth-jwt:$ktor_version")
-    implementation("org.kodein.di:kodein-di-framework-ktor-server-jvm:7.0.0")
 
     implementation("org.jetbrains.exposed:exposed-core:0.38.2")
     implementation("org.jetbrains.exposed:exposed-dao:0.38.2")
