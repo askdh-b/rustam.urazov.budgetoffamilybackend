@@ -7,10 +7,10 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import rustam.urazov.models.IncomesSource
+import rustam.urazov.incomesSourceService
 import rustam.urazov.models.body.IncomesSourceBody
-import rustam.urazov.models.incomesSourceStorage
-import rustam.urazov.models.userStorage
+import rustam.urazov.storage.IncomesSource
+import rustam.urazov.userService
 
 fun Route.incomesSourceRouting() {
     authenticate("auth-jwt") {
@@ -19,8 +19,8 @@ fun Route.incomesSourceRouting() {
 
             val username = principal!!.payload.getClaim("username").asString()
 
-            userStorage.find { it.username == username }?.let { user ->
-                incomesSourceStorage.filter { it.userId == user.id }.let {
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                incomesSourceService.getAllIncomesSources().filter { it.userId == user.id }.let {
                     call.respond(it)
                 }
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
@@ -33,10 +33,10 @@ fun Route.incomesSourceRouting() {
 
             val incomesSource = call.receive<IncomesSourceBody>()
 
-            val userId = userStorage.find { it.username == username }?.id
+            val userId = userService.getAllUser().find { it.username == username }?.id
 
             if (userId != null) {
-                incomesSourceStorage.add(mapToIncomesSource(incomesSource, userId))
+                incomesSourceService.addIncomesSource(mapToIncomesSource(incomesSource, userId))
                 call.respond(status = HttpStatusCode.Created, "Incomes source stored correctly")
             } else call.respond(status = HttpStatusCode.NotFound, message = "User npt found")
         }
@@ -53,14 +53,18 @@ fun Route.incomesSourceRouting() {
                 message = "Incomes source not found"
             )
 
-            incomesSourceStorage.find { it.id.toString() == id }?.let { incomesSource ->
-                userStorage.find { it.username == username }?.let { user ->
+            incomesSourceService.getAllIncomesSources().find { it.id.toString() == id }?.let { incomesSource ->
+                userService.getAllUser().find { it.username == username }?.let { user ->
                     if (user.id == incomesSource.userId) {
-                        incomesSource.apply {
-                            name = newIncomesSource.name
-                            sum = newIncomesSource.sum
-                            monthDay = newIncomesSource.monthDay
-                        }
+                        incomesSourceService.editIncomesSource(
+                            IncomesSource(
+                                id = incomesSource.id,
+                                userId = user.id,
+                                name = newIncomesSource.name,
+                                sum = newIncomesSource.sum,
+                                monthDay = newIncomesSource.monthDay
+                            )
+                        )
                         call.respond(status = HttpStatusCode.OK, message = "Incomes source edited correctly")
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
@@ -77,18 +81,13 @@ fun Route.incomesSourceRouting() {
 
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
 
-            userStorage.find { it.username == username }?.let { user ->
-                incomesSourceStorage.find { it.id.toString() == id }?.let { incomesSource ->
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                incomesSourceService.getAllIncomesSources().find { it.id.toString() == id }?.let { incomesSource ->
                     if (user.id == incomesSource.userId) {
-                        if (incomesSourceStorage.removeIf { it.id.toString() == id }) {
-                            call.respond(
-                                status = HttpStatusCode.OK, message = "Incomes source removed correctly"
-                            )
-                        } else {
-                            call.respond(
-                                status = HttpStatusCode.BadRequest, message = "Incomes source not removed"
-                            )
-                        }
+                        incomesSourceService.deleteIncomesSource(id.toInt())
+                        call.respond(
+                            status = HttpStatusCode.OK, message = "Incomes source removed correctly"
+                        )
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
                         message = "You cannot remove someone else's incomes source"
@@ -100,15 +99,9 @@ fun Route.incomesSourceRouting() {
 }
 
 fun mapToIncomesSource(incomesSource: IncomesSourceBody, userId: Int): IncomesSource = IncomesSource(
-    id = generateIncomesSourceId(),
+    id = 0,
     userId = userId,
     name = incomesSource.name,
     sum = incomesSource.sum,
     monthDay = incomesSource.monthDay
 )
-
-fun generateIncomesSourceId(): Int = try {
-    incomesSourceStorage.last().id + 1
-} catch (e: Exception) {
-    1
-}

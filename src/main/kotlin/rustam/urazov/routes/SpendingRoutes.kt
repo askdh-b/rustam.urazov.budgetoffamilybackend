@@ -7,8 +7,11 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import rustam.urazov.models.*
+import rustam.urazov.familyService
 import rustam.urazov.models.body.SpendingBody
+import rustam.urazov.spendingService
+import rustam.urazov.storage.Spending
+import rustam.urazov.userService
 import java.util.*
 
 fun Route.spendingRouting() {
@@ -18,19 +21,19 @@ fun Route.spendingRouting() {
 
             val username = principal!!.payload.getClaim("username").asString()
 
-            userStorage.find { it.username == username }?.let { user ->
-                familyStorage.find { it.id == user.id }?.let { family ->
-                    userStorage.filter { it.familyId == family.id }.let { users ->
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                familyService.getAllFamilies().find { it.id == user.id }?.let { family ->
+                    userService.getAllUser().filter { it.familyId == family.id }.let { users ->
                         val spendings = mutableListOf<Spending>()
 
                         for (u in users) {
-                            spendings.addAll(spendingStorage.filter { it.userId == u.id })
+                            spendings.addAll(spendingService.getAllSpendings().filter { it.userId == u.id })
                         }
                         call.respond(spendings)
                     }
                 } ?: let {
-                    val incomes = spendingStorage.filter { it.userId == user.id }
-                    call.respond(incomes)
+                    val spendings = spendingService.getAllSpendings().filter { it.userId == user.id }
+                    call.respond(spendings)
                 }
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
@@ -42,10 +45,10 @@ fun Route.spendingRouting() {
 
             val spending = call.receive<SpendingBody>()
 
-            val userId = userStorage.find { it.username == username }?.id
+            val userId = userService.getAllUser().find { it.username == username }?.id
 
             if (userId != null) {
-                spendingStorage.add(mapToSpending(spending, userId))
+                spendingService.addSpending(mapToSpending(spending, userId))
                 call.respond(
                     status = HttpStatusCode.Created, message = "Spending stored correctly"
                 )
@@ -55,15 +58,9 @@ fun Route.spendingRouting() {
 }
 
 fun mapToSpending(spending: SpendingBody, userId: Int): Spending = Spending(
-    id = generateSpendingId(),
+    id = 0,
     userId = userId,
     name = spending.name,
     sum = spending.sum,
-    date = Date().toString()
+    creationDate = Date().toString()
 )
-
-fun generateSpendingId(): Int = try {
-    spendingStorage.last().id + 1
-} catch (e: Exception) {
-    1
-}

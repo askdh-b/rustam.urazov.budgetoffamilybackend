@@ -13,8 +13,8 @@ import rustam.urazov.md5
 import rustam.urazov.models.Token
 import rustam.urazov.models.body.AuthBody
 import rustam.urazov.models.Username
-import rustam.urazov.models.userStorage
 import rustam.urazov.toHex
+import rustam.urazov.userService
 import java.util.*
 
 fun Application.configureAuthentication() {
@@ -71,7 +71,7 @@ fun Application.configureAuthentication() {
         post("/auth") {
             val user = call.receive<AuthBody>()
 
-            userStorage.find { it.username == user.username }?.let {
+            userService.getAllUser().find { it.username == user.username }?.let {
                 if (it.password == md5(user.password).toHex()) {
                     val accessToken = JWT.create()
                         .withAudience(audience)

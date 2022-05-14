@@ -7,10 +7,11 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import rustam.urazov.models.Invitation
+import rustam.urazov.invitationService
 import rustam.urazov.models.body.InvitationBody
-import rustam.urazov.models.invitationStorage
-import rustam.urazov.models.userStorage
+import rustam.urazov.storage.Invitation
+import rustam.urazov.storage.User
+import rustam.urazov.userService
 
 fun Route.invitationRouting() {
     authenticate("auth-jwt") {
@@ -19,8 +20,8 @@ fun Route.invitationRouting() {
 
             val username = principal!!.payload.getClaim("username").asString()
 
-            userStorage.find { it.username == username }?.let { user ->
-                val invitation = invitationStorage.filter { it.recipientId == user.id }
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                val invitation = invitationService.getAllInvitations().filter { it.recipientId == user.id }
 
                 call.respond(invitation)
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
@@ -33,12 +34,12 @@ fun Route.invitationRouting() {
 
             val invitation = call.receive<InvitationBody>()
 
-            val senderId = userStorage.find { it.username == username }?.id
-            val familyId = userStorage.find { it.username == username }?.familyId
+            val senderId = userService.getAllUser().find { it.username == username }?.id
+            val familyId = userService.getAllUser().find { it.username == username }?.familyId
 
             if (senderId != null && familyId != null) {
                 if (senderId != invitation.recipientId) {
-                    invitationStorage.add(
+                    invitationService.addInvitation(
                         mapToInvitation(
                             invitation,
                             senderId,
@@ -62,12 +63,21 @@ fun Route.invitationRouting() {
                 status = HttpStatusCode.BadRequest, message = "Invitation id is null"
             )
 
-            invitationStorage.find { it.id.toString() == id }?.let { invitation ->
-                userStorage.find { it.username == username }?.let { user ->
+            invitationService.getAllInvitations().find { it.id.toString() == id }?.let { invitation ->
+                userService.getAllUser().find { it.username == username }?.let { user ->
                     if (user.id == invitation.recipientId) {
                         if (user.familyId == null) {
-                            user.familyId = userStorage.find { it.id == invitation.senderId }?.familyId
-                            invitationStorage.removeIf { it.id == invitation.id }
+                            userService.editUser(
+                                User(
+                                    id = user.id,
+                                    familyId = userService.getAllUser().find { it.id == invitation.senderId }?.familyId,
+                                    firstName = user.firstName,
+                                    lastName = user.lastName,
+                                    username = user.username,
+                                    password = user.password
+                                )
+                            )
+                            invitationService.deleteInvitation(invitation.id)
                             call.respond(status = HttpStatusCode.OK, message = "Invitation accepted")
                         } else {
                             call.respond(
@@ -91,13 +101,12 @@ fun Route.invitationRouting() {
                 status = HttpStatusCode.BadRequest, message = "Invitation id is null"
             )
 
-            userStorage.find { it.username == username }?.let { user ->
-                val recipientId = invitationStorage.find { it.id.toString() == id }?.recipientId
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                val recipientId = invitationService.getAllInvitations().find { it.id.toString() == id }?.recipientId
 
                 if (user.id == recipientId) {
-                    invitationStorage.removeIf { it.id.toString() == id }.let {
-                        call.respond(status = HttpStatusCode.OK, message = "Invitation removed correctly")
-                    }
+                    invitationService.deleteInvitation(id.toInt())
+                    call.respond(status = HttpStatusCode.OK, message = "Invitation removed correctly")
                 } else call.respond(
                     status = HttpStatusCode.BadRequest,
                     message = "You cannot remove someone else's invitation"
@@ -108,14 +117,8 @@ fun Route.invitationRouting() {
 }
 
 fun mapToInvitation(invitation: InvitationBody, senderId: Int, familyId: Int) = Invitation(
-    id = generateInvitationId(),
+    id = 0,
     senderId = senderId,
     recipientId = invitation.recipientId,
     familyId = familyId
 )
-
-fun generateInvitationId(): Int = try {
-    invitationStorage.last().id + 1
-} catch (e: Exception) {
-    1
-}

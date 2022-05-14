@@ -7,13 +7,12 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import rustam.urazov.models.Goal
+import rustam.urazov.familyService
+import rustam.urazov.goalService
 import rustam.urazov.models.body.GoalBody
 import rustam.urazov.models.body.GoalBodyForEdit
-import rustam.urazov.models.familyStorage
-import rustam.urazov.models.goalStorage
-import rustam.urazov.models.userStorage
-import java.util.*
+import rustam.urazov.storage.Goal
+import rustam.urazov.userService
 
 fun Route.goalRouting() {
     authenticate("auth-jwt") {
@@ -22,18 +21,18 @@ fun Route.goalRouting() {
 
             val username = principal!!.payload.getClaim("username").asString()
 
-            userStorage.find { it.username == username }?.let { user ->
-                familyStorage.find { it.id == user.familyId }?.let { family ->
-                    userStorage.filter { it.familyId == family.id }.let { users ->
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                familyService.getAllFamilies().find { it.id == user.familyId }?.let { family ->
+                    userService.getAllUser().filter { it.familyId == family.id }.let { users ->
                         val goals = mutableListOf<Goal>()
 
                         for (u in users) {
-                            goals.addAll(goalStorage.filter { it.userId == u.id })
+                            goals.addAll(goalService.getAllGoals().filter { it.userId == u.id })
                         }
                         call.respond(goals)
                     }
                 } ?: let {
-                    val goals = goalStorage.filter { it.userId == user.id }
+                    val goals = goalService.getAllGoals().filter { it.userId == user.id }
                     call.respond(goals)
                 }
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
@@ -46,10 +45,10 @@ fun Route.goalRouting() {
 
             val goal = call.receive<GoalBody>()
 
-            val userId = userStorage.find { it.username == username }?.id
+            val userId = userService.getAllUser().find { it.username == username }?.id
 
             if (userId != null) {
-                goalStorage.add(mapToGoal(goal, userId))
+                goalService.addGoal(mapToGoal(goal, userId))
                 call.respond(
                     status = HttpStatusCode.Created, message = "Goal stored correctly"
                 )
@@ -65,15 +64,19 @@ fun Route.goalRouting() {
 
             val id = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
 
-            goalStorage.find { it.id.toString() == id }?.let { goal ->
-                userStorage.find { it.username == username }?.let { user ->
+            goalService.getAllGoals().find { it.id.toString() == id }?.let { goal ->
+                userService.getAllUser().find { it.username == username }?.let { user ->
                     if (user.id == goal.userId) {
-                        goal.apply {
-                            name = newGoal.name
-                            incomePercentile = newGoal.incomePercentile
-                            progress = newGoal.progress
-                            sum = newGoal.sum
-                        }
+                        goalService.editGoal(
+                            Goal(
+                                id = goal.id,
+                                userId = user.id,
+                                name = newGoal.name,
+                                incomePercentile = newGoal.incomePercentile,
+                                actualSum = newGoal.progress,
+                                necessarySum = newGoal.sum
+                            )
+                        )
                         call.respondText("Goal edited correctly", status = HttpStatusCode.OK)
                     } else {
                         call.respond(
@@ -92,18 +95,13 @@ fun Route.goalRouting() {
 
             val id = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
 
-            userStorage.find { it.username == username }?.let { user ->
-                goalStorage.find { it.id.toString() == id }?.let { goal ->
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                goalService.getAllGoals().find { it.id.toString() == id }?.let { goal ->
                     if (user.id == goal.userId) {
-                        if (goalStorage.removeIf { it.id.toString() == id }) {
-                            call.respond(
-                                status = HttpStatusCode.OK, message = "Goal removed correctly"
-                            )
-                        } else {
-                            call.respond(
-                                status = HttpStatusCode.BadRequest, message = "Goal not removed"
-                            )
-                        }
+                        goalService.deleteGoal(id.toInt())
+                        call.respond(
+                            status = HttpStatusCode.OK, message = "Goal removed correctly"
+                        )
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
                         message = "You cannot remove someone else's goal"
@@ -115,17 +113,10 @@ fun Route.goalRouting() {
 }
 
 fun mapToGoal(goal: GoalBody, userId: Int): Goal = Goal(
-    id = generateGoalId(),
+    id = 0,
     userId = userId,
     name = goal.name,
     incomePercentile = goal.incomePercentile,
-    progress = 0.00,
-    sum = goal.sum,
-    creationDate = Date().toString()
+    actualSum = 0.0F,
+    necessarySum = goal.sum
 )
-
-fun generateGoalId(): Int = try {
-    goalStorage.last().id + 1
-} catch (e: Exception) {
-    1
-}

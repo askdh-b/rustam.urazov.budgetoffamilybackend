@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SpendingsSourceBody(
     val name: String,
-    val sum: Double,
+    val sum: Float,
     val monthDay: Int
 )
