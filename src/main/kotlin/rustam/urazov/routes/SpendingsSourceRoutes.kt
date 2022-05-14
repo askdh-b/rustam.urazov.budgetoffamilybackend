@@ -26,6 +26,28 @@ fun Route.spendingsSourceRouting() {
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
+        get("/spendingsSource/{id?}") {
+            val principal = call.principal<JWTPrincipal>()
+
+            val username = principal!!.payload.getClaim("username").asString()
+
+            val id = call.parameters["id"] ?: return@get call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "Spendings source not found"
+            )
+
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                spendingsSourceService.getAllSpendingsSources().find { it.id.toString() == id }
+                    ?.let { spendingsSource ->
+                        if (user.id == spendingsSource.id) call.respond(spendingsSource)
+                        else call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = "You can't view other people's spending sources"
+                        )
+                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "Spendings source not found")
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
+        }
+
         post("/spendingsSource") {
             val principal = call.principal<JWTPrincipal>()
 
