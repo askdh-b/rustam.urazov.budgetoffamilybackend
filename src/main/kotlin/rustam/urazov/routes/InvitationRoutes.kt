@@ -7,8 +7,10 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import rustam.urazov.familyService
 import rustam.urazov.invitationService
 import rustam.urazov.models.body.InvitationBody
+import rustam.urazov.storage.Family
 import rustam.urazov.storage.Invitation
 import rustam.urazov.storage.User
 import rustam.urazov.userService
@@ -35,21 +37,42 @@ fun Route.invitationRouting() {
             val invitation = call.receive<InvitationBody>()
 
             val senderId = userService.getAllUser().find { it.username == username }?.id
-            val familyId = userService.getAllUser().find { it.username == username }?.familyId
+            var familyId = userService.getAllUser().find { it.username == username }?.familyId
 
             if (senderId != null && familyId != null) {
-                if (senderId != invitation.recipientId) {
-                    invitationService.addInvitation(
-                        mapToInvitation(
-                            invitation,
-                            senderId,
-                            familyId
+                if (familyId == 1) {
+                    familyService.addFamily(Family(0))
+                    userService.getAllUser().find { it.username == username }?.let { user ->
+                        userService.editUser(
+                            User(
+                                id = user.id,
+                                familyId = familyService.getAllFamilies().last().id,
+                                firstName = user.firstName,
+                                lastName = user.lastName,
+                                username = user.username,
+                                password = user.password
+                            )
                         )
-                    )
-                    call.respond(status = HttpStatusCode.Created, message = "Invitation sent correctly")
+                        familyId = user.familyId
+                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
+                }
+                if (senderId != invitation.recipientId) {
+                    userService.getAllUser().find { it.id == invitation.recipientId }?.let { user ->
+                        if (user.familyId == 1) {
+                            invitationService.addInvitation(
+                                mapToInvitation(
+                                    invitation,
+                                    senderId,
+                                    familyId ?: 1
+                                )
+                            )
+                            call.respond(status = HttpStatusCode.Created, message = "Invitation sent correctly")
+                        } else call.respond(status = HttpStatusCode.BadRequest, message = "The user is already in the family")
+                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
+
                 } else call.respond(
                     status = HttpStatusCode.BadRequest,
-                    message = "Нou cannot send an invitation to yourself"
+                    message = "You cannot send an invitation to yourself"
                 )
             } else call.respond(status = HttpStatusCode.NotFound, message = "User or family is null")
         }
@@ -66,7 +89,7 @@ fun Route.invitationRouting() {
             invitationService.getAllInvitations().find { it.id.toString() == id }?.let { invitation ->
                 userService.getAllUser().find { it.username == username }?.let { user ->
                     if (user.id == invitation.recipientId) {
-                        if (user.familyId == null) {
+                        if (user.familyId == 1) {
                             userService.editUser(
                                 User(
                                     id = user.id,
@@ -102,10 +125,27 @@ fun Route.invitationRouting() {
             )
 
             userService.getAllUser().find { it.username == username }?.let { user ->
+                val senderId = invitationService.getAllInvitations().find { it.id.toString() == id }?.senderId
                 val recipientId = invitationService.getAllInvitations().find { it.id.toString() == id }?.recipientId
 
                 if (user.id == recipientId) {
                     invitationService.deleteInvitation(id.toInt())
+                    userService.getAllUser().find { it.id == senderId }?.let { user2 ->
+                        val familyId = user2.familyId
+                        if (userService.getAllUser().filter { it.familyId == familyId }.size == 1) {
+                            userService.editUser(
+                                User(
+                                    id = user2.id,
+                                    familyId = 1,
+                                    firstName = user2.firstName,
+                                    lastName = user2.lastName,
+                                    username = user2.username,
+                                    password = user2.password
+                                )
+                            )
+                            if (familyId != null) familyService.deleteFamily(familyId)
+                        }
+                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
                     call.respond(status = HttpStatusCode.OK, message = "Invitation removed correctly")
                 } else call.respond(
                     status = HttpStatusCode.BadRequest,
