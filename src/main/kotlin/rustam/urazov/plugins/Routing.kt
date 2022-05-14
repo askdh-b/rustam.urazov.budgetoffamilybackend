@@ -7,7 +7,6 @@ import rustam.urazov.routes.*
 fun Application.configureRouting() {
     routing {
         userRouting()
-        familyRouting()
         invitationRouting()
         goalRouting()
         incomeRouting()

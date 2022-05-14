@@ -59,8 +59,8 @@ fun Route.incomesSourceRouting() {
 
             if (userId != null) {
                 incomesSourceService.addIncomesSource(mapToIncomesSource(incomesSource, userId))
-                call.respond(status = HttpStatusCode.Created, "Incomes source stored correctly")
-            } else call.respond(status = HttpStatusCode.NotFound, message = "User npt found")
+                call.respond(status = HttpStatusCode.Created, message = "Incomes source stored correctly")
+            } else call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
         put("/incomesSource/{id?}") {
@@ -90,7 +90,7 @@ fun Route.incomesSourceRouting() {
                         call.respond(status = HttpStatusCode.OK, message = "Incomes source edited correctly")
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = "You cannot edit else's incomes source"
+                        message = "You cannot edit else's incomes sources"
                     )
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "Incomes source not found")
@@ -112,7 +112,7 @@ fun Route.incomesSourceRouting() {
                         )
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = "You cannot remove someone else's incomes source"
+                        message = "You cannot remove someone else's incomes sources"
                     )
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "Incomes source not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")

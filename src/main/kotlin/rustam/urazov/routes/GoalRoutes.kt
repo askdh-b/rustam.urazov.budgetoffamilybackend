@@ -103,7 +103,7 @@ fun Route.goalRouting() {
                     } else {
                         call.respond(
                             status = HttpStatusCode.BadRequest,
-                            message = "You cannot edit someone else's goal"
+                            message = "You cannot edit someone else's goals"
                         )
                     }
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
@@ -126,7 +126,7 @@ fun Route.goalRouting() {
                         )
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = "You cannot remove someone else's goal"
+                        message = "You cannot remove someone else's goals"
                     )
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "Goal not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")

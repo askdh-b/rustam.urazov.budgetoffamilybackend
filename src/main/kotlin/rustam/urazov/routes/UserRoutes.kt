@@ -35,7 +35,7 @@ fun Route.userRouting() {
                         call.respond(foundUsers)
                     }
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "Family not found")
-            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User npt found")
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
     }
 

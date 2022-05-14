@@ -149,7 +149,7 @@ fun Route.invitationRouting() {
                     call.respond(status = HttpStatusCode.OK, message = "Invitation removed correctly")
                 } else call.respond(
                     status = HttpStatusCode.BadRequest,
-                    message = "You cannot remove someone else's invitation"
+                    message = "You cannot remove someone else's invitations"
                 )
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }

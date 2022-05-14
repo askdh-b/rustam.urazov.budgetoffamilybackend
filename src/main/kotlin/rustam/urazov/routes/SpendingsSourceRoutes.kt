@@ -42,7 +42,7 @@ fun Route.spendingsSourceRouting() {
                         if (user.id == spendingsSource.id) call.respond(spendingsSource)
                         else call.respond(
                             status = HttpStatusCode.BadRequest,
-                            message = "You can't view other people's spending sources"
+                            message = "You can't view other people's spendings sources"
                         )
                     } ?: call.respond(status = HttpStatusCode.NotFound, message = "Spendings source not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
@@ -59,7 +59,7 @@ fun Route.spendingsSourceRouting() {
 
             if (userId != null) {
                 spendingsSourceService.addSpendingsSource(mapToSpendingsSource(spendingsSource, userId))
-                call.respond(status = HttpStatusCode.Created, "Spendings source stored correctly")
+                call.respond(status = HttpStatusCode.Created, message = "Spendings source stored correctly")
             } else call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
@@ -90,7 +90,7 @@ fun Route.spendingsSourceRouting() {
                         call.respond(status = HttpStatusCode.OK, message = "Spendings source edited correctly")
                     } else call.respond(
                         status = HttpStatusCode.BadRequest,
-                        message = "You cannot edit else's spendings source"
+                        message = "You cannot edit else's spendings sources"
                     )
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "Spendings source not found")
@@ -113,7 +113,7 @@ fun Route.spendingsSourceRouting() {
                             )
                         } else call.respond(
                             status = HttpStatusCode.BadRequest,
-                            message = "You cannot remove someone else's spendings source"
+                            message = "You cannot remove someone else's spendings sources"
                         )
                     } ?: call.respond(status = HttpStatusCode.NotFound, message = "Spendings source not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
