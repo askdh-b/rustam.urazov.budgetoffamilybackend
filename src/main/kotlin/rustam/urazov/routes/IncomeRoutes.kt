@@ -8,8 +8,10 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.familyService
+import rustam.urazov.goalService
 import rustam.urazov.incomeService
 import rustam.urazov.models.body.IncomeBody
+import rustam.urazov.storage.Goal
 import rustam.urazov.storage.Income
 import rustam.urazov.userService
 import java.util.*
@@ -49,6 +51,20 @@ fun Route.incomeRouting() {
 
             if (userId != null) {
                 incomeService.addIncome(mapToIncome(income, userId))
+                goalService.getAllGoals().filter { it.userId == userId }.let { goals ->
+                    for (g in goals) {
+                        goalService.editGoal(
+                            Goal(
+                                id = g.id,
+                                userId = g.userId,
+                                name = g.name,
+                                incomePercentile = g.incomePercentile,
+                                actualSum = g.actualSum + (income.sum * (g.incomePercentile / 100)),
+                                necessarySum = g.necessarySum
+                            )
+                        )
+                    }
+                }
                 call.respond(
                     status = HttpStatusCode.Created, message = "Income stored correctly"
                 )
