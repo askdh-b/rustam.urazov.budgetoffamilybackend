@@ -37,6 +37,31 @@ fun Route.userRouting() {
                 } ?: call.respond(status = HttpStatusCode.NotFound, message = "Family not found")
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
+
+        post("/leave") {
+            val principal = call.principal<JWTPrincipal>()
+
+            val username = principal!!.payload.getClaim("username").asString()
+
+            userService.getAllUser().find { it.username == username }?.let { user ->
+                familyService.getAllFamilies().find { it.id == user.familyId }?.let { family ->
+                    if (user.familyId != 1) {
+                        userService.editUser(User(
+                            id = user.id,
+                            familyId = 1,
+                            firstName = user.firstName,
+                            lastName = user.lastName,
+                            username = user.username,
+                            password = user.password
+                        ))
+                        if (userService.getAllUser().none { it.familyId == family.id }) {
+                            familyService.deleteFamily(family.id)
+                        }
+                        call.respond(status = HttpStatusCode.OK, message = "You left your family")
+                    } else call.respond(status = HttpStatusCode.BadRequest, message = "You are not in the family")
+                }
+            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
+        }
     }
 
     post("/register") {
