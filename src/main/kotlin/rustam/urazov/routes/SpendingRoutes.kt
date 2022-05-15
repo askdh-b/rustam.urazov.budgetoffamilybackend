@@ -38,28 +38,6 @@ fun Route.spendingRouting() {
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
-        get("/spending/{id?}") {
-            val principal = call.principal<JWTPrincipal>()
-
-            val username = principal!!.payload.getClaim("username").asString()
-
-            val id = call.parameters["id"] ?: return@get call.respond(
-                status = HttpStatusCode.BadRequest,
-                message = "Spending not found"
-            )
-
-            userService.getAllUser().find { it.username == username }?.let { user ->
-                spendingService.getAllSpendings().find { it.id.toString() == id }
-                    ?.let { spending ->
-                        if (user.id == spending.id) call.respond(spending)
-                        else call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "You can't view other people's spendings"
-                        )
-                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "Spending not found")
-            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
-        }
-
         post("/spending") {
             val principal = call.principal<JWTPrincipal>()
 

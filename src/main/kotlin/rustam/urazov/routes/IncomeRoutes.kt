@@ -38,28 +38,6 @@ fun Route.incomeRouting() {
             } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
         }
 
-        get("/income/{id?}") {
-            val principal = call.principal<JWTPrincipal>()
-
-            val username = principal!!.payload.getClaim("username").asString()
-
-            val id = call.parameters["id"] ?: return@get call.respond(
-                status = HttpStatusCode.BadRequest,
-                message = "Income not found"
-            )
-
-            userService.getAllUser().find { it.username == username }?.let { user ->
-                incomeService.getAllIncomes().find { it.id.toString() == id }
-                    ?.let { income ->
-                        if (user.id == income.id) call.respond(income)
-                        else call.respond(
-                            status = HttpStatusCode.BadRequest,
-                            message = "You can't view other people's incomes"
-                        )
-                    } ?: call.respond(status = HttpStatusCode.NotFound, message = "Income not found")
-            } ?: call.respond(status = HttpStatusCode.NotFound, message = "User not found")
-        }
-
         post("/income") {
             val principal = call.principal<JWTPrincipal>()
 
