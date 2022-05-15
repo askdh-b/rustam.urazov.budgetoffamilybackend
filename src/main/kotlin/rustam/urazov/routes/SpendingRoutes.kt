@@ -8,10 +8,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rustam.urazov.familyService
-import rustam.urazov.goalService
 import rustam.urazov.models.body.SpendingBody
 import rustam.urazov.spendingService
-import rustam.urazov.storage.Goal
 import rustam.urazov.storage.Spending
 import rustam.urazov.userService
 import java.util.*
